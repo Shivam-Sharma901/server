@@ -24,52 +24,63 @@ class UserController {
   static login = async (req, res) => {
     try {
       const { email, password } = req.body;
+
       const user = await UserModel.findOne({ email });
-      // console.log(user)
+
       if (!user) {
-        return res.status(404).json({ message: "User not found" })
+        return res.status(404).json({
+          message: "User not found",
+        });
       }
 
       const isMatch = await bcrypt.compare(password, user.password);
-      // console.log(isMatch);
+
       if (!isMatch) {
-        return res.status(401).json({ message: "Invalid credentials" });
+        return res.status(401).json({
+          message: "Invalid credentials",
+        });
       }
 
+      // JWT TOKEN
       const token = jwt.sign(
-        { id: user._id, role: user.role },
+        {
+          id: user._id,
+          role: user.role,
+        },
         process.env.JWT_SECRET,
-        { expiresIn: "1d" }
+        {
+          expiresIn: "1d",
+        }
       );
-      // console.log(token);
 
-      // HTTP Only Cookie
+      // COOKIE
       res.cookie("token", token, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite:
-          process.env.NODE_ENV === "production"
-            ? "None"
-            : "lax",
-        maxAge: 24 * 60 * 60 * 1000
+        secure: true,
+        sameSite: "none",
+        maxAge: 24 * 60 * 60 * 1000,
       });
 
+      // RESPONSE
       res.status(200).json({
+        success: true,
         message: "Login successful",
         user: {
           id: user._id,
           name: user.name,
           email: user.email,
-          role: user.role
-        }
+          role: user.role,
+        },
       });
-
 
     } catch (error) {
       console.log(error);
-      res.status(500).json({ message: "Server error" })
+
+      res.status(500).json({
+        message: "Server error",
+      });
     }
-  }
+  };
 
   // Logout
   static logout = (req, res) => {
